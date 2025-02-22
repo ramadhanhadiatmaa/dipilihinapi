@@ -7,14 +7,14 @@ COPY . .
 
 RUN go mod download
 
-RUN CGO_ENABLED=0 go build -o auth-dp
+RUN CGO_ENABLED=0 go build -o data-dp
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=build /app/auth-dp .
+COPY --from=build /app/data-dp .
 
-EXPOSE 7301
+EXPOSE 7302
 
-CMD [ "./auth-dp" ]
+CMD [ "./data-dp" ]

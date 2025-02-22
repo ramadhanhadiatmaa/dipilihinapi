@@ -1,3 +1,5 @@
 .env
 
 /tmp/
+README.md
+docker-compose.yml
