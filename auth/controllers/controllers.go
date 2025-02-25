@@ -2,16 +2,76 @@ package controllers
 
 import (
 	"auth/models"
+	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
 
-	
+	"firebase.google.com/go/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+var FirebaseAuth *auth.Client
+
+func Login(c *fiber.Ctx) error {
+	var data map[string]string
+
+	// Ambil data dari request body
+	if err := c.BodyParser(&data); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	// Ambil Firebase ID Token dari request
+	idToken := data["id_token"]
+
+	if idToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token required"})
+	}
+
+	// **Verifikasi Firebase ID Token**
+	token, err := FirebaseAuth.VerifyIDToken(context.Background(), idToken)
+	if err != nil {
+		fmt.Println("Invalid Firebase Token:", err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
+	}
+
+	// Ambil email dari token yang sudah diverifikasi
+	email := token.Claims["email"].(string)
+
+	// Cari user berdasarkan email di database
+	var user models.User
+	err = models.DB.Where("email = ?", email).First(&user).Error
+
+	// Jika user tidak ditemukan, tolak akses
+	if err == gorm.ErrRecordNotFound {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
+	} else if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
+	}
+
+	// Generate JWT internal backend
+	secretKey := os.Getenv("SECRET_KEY")
+	claims := jwt.MapClaims{
+		"email": user.Email,
+		"type":  user.Type,
+		"exp":   time.Now().Add(time.Hour * 240).Unix(),
+	}
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, _ := jwtToken.SignedString([]byte(secretKey))
+
+	// Return user info + JWT backend
+	return c.JSON(fiber.Map{
+		"token":     signedToken,
+		"email":     user.Email,
+		"phone":     user.Phone,
+		"full_name": user.FullName,
+		"type":      user.Type,
+	})
+}
 
 func Register(c *fiber.Ctx) error {
 	// Parsing input data
@@ -54,54 +114,6 @@ func Register(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{
 		"message": "User registered successfully",
-	})
-}
-
-func Login(c *fiber.Ctx) error {
-	var data map[string]string
-
-	// Ambil data dari request body
-	if err := c.BodyParser(&data); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
-	}
-
-	// Ambil Firebase Token dari request
-	idToken := data["id_token"]
-	email := data["email"]
-
-	// Jika tidak ada token atau email, tolak permintaan
-	if idToken == "" || email == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Email required"})
-	}
-
-	// Cari user berdasarkan email di database
-	var user models.User
-	err := models.DB.Where("email = ?", email).First(&user).Error
-
-	// Jika user tidak ditemukan, tolak akses
-	if err == gorm.ErrRecordNotFound {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
-	} else if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
-	}
-
-	// Generate JWT untuk backend (bukan Firebase Token, tapi JWT internal backend)
-	secretKey := os.Getenv("SECRET_KEY")
-	claims := jwt.MapClaims{
-		"email": user.Email,
-		"type":  user.Type,
-		"exp":   time.Now().Add(time.Hour * 240).Unix(),
-	}
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, _ := jwtToken.SignedString([]byte(secretKey))
-
-	// Return user info + JWT backend
-	return c.JSON(fiber.Map{
-		"token":     signedToken,
-		"email":     user.Email,
-		"phone":     user.Phone,
-		"full_name": user.FullName,
-		"type":      user.Type,
 	})
 }
 
