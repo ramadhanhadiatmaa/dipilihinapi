@@ -29,8 +29,9 @@ func getFirebaseAuth() (*auth.Client, error) {
 		return nil, fmt.Errorf("firebase credentials not set")
 	}
 
-	// Perbaiki escape karakter jika ada
+	// Ubah karakter `\n` yang masih dalam bentuk string ke newline asli
 	credentials = strings.ReplaceAll(credentials, "\\n", "\n")
+
 	opt := option.WithCredentialsJSON([]byte(credentials))
 
 	// Inisialisasi Firebase App
@@ -48,6 +49,7 @@ func getFirebaseAuth() (*auth.Client, error) {
 	firebaseAuth = authClient
 	return authClient, nil
 }
+
 
 func main() {
 
