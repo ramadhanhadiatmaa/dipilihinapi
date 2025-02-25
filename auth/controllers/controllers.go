@@ -11,7 +11,6 @@ import (
 	"firebase.google.com/go/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -86,16 +85,9 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "Email already exists"})
 	}
 
-	// Men-generate hash password
-	password, err := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not hash password"})
-	}
-
 	// Membuat objek user baru
 	user := models.User{
 		Email:     data["email"],
-		Password:  string(password),
 		FullName:  data["full_name"],
 		Phone:     data["phone"],
 		Type:      1,
