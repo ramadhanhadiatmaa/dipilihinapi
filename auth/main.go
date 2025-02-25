@@ -58,6 +58,13 @@ func getFirebaseAuth() (*auth.Client, error) {
 }
 
 func main() {
+
+	authClient, err := getFirebaseAuth()
+	if err != nil {
+		log.Fatalf("Failed to initialize Firebase Auth: %v", err)
+	}
+	fmt.Println("Firebase Auth initialized successfully:", authClient)
+
 	models.ConnectDatabase()
 
 	port := os.Getenv("PORT")
