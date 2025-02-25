@@ -3,7 +3,6 @@ package controllers
 import (
 	"auth/models"
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -14,7 +13,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var FirebaseAuth *auth.Client
+var firebaseAuth *auth.Client
+
+func SetFirebaseAuth(authClient *auth.Client) {
+	firebaseAuth = authClient
+}
 
 func Login(c *fiber.Ctx) error {
 	var data map[string]string
@@ -24,28 +27,28 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	// Ambil Firebase ID Token dari request
 	idToken := data["id_token"]
+	email := data["email"]
 
-	if idToken == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token required"})
+	if idToken == "" || email == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Email and token are required"})
 	}
 
-	// **Verifikasi Firebase ID Token**
-	token, err := FirebaseAuth.VerifyIDToken(context.Background(), idToken)
+	// Verifikasi token Firebase
+	token, err := firebaseAuth.VerifyIDToken(context.Background(), idToken)
 	if err != nil {
-		fmt.Println("Invalid Firebase Token:", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid Firebase token"})
 	}
 
-	// Ambil email dari token yang sudah diverifikasi
-	email := token.Claims["email"].(string)
+	// Cocokkan email dari token dengan request
+	if token.Claims["email"] != email {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token does not match email"})
+	}
 
-	// Cari user berdasarkan email di database
+	// Cari user di database berdasarkan email
 	var user models.User
 	err = models.DB.Where("email = ?", email).First(&user).Error
 
-	// Jika user tidak ditemukan, tolak akses
 	if err == gorm.ErrRecordNotFound {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
 	} else if err != nil {
@@ -62,7 +65,7 @@ func Login(c *fiber.Ctx) error {
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, _ := jwtToken.SignedString([]byte(secretKey))
 
-	// Return user info + JWT backend
+	// Return JWT backend ke user
 	return c.JSON(fiber.Map{
 		"token":     signedToken,
 		"email":     user.Email,

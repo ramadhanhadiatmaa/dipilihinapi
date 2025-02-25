@@ -4,68 +4,61 @@ import (
 	"auth/models"
 	"auth/routes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
+	"strings"
+
+	"auth/controllers"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 )
 
-func loadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-}
+var firebaseAuth *auth.Client
 
 func getFirebaseAuth() (*auth.Client, error) {
-	// Load environment variables
-	loadEnv()
+	if firebaseAuth != nil {
+		return firebaseAuth, nil
+	}
+
 	credentials := os.Getenv("FIREBASE_CREDENTIALS")
-
 	if credentials == "" {
-		return nil, fmt.Errorf("firebase_credentials is not set")
+		return nil, fmt.Errorf("firebase credentials not set")
 	}
 
-	// Convert JSON string to map
-	var credMap map[string]interface{}
-	if err := json.Unmarshal([]byte(credentials), &credMap); err != nil {
-		return nil, fmt.Errorf("invalid firebase_credentials JSON format")
-	}
-
-	// Convert map to Firebase option
+	// Perbaiki escape karakter jika ada
+	credentials = strings.ReplaceAll(credentials, "\\n", "\n")
 	opt := option.WithCredentialsJSON([]byte(credentials))
 
-	// Initialize Firebase App
+	// Inisialisasi Firebase App
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing firebase app: %v", err)
+		return nil, fmt.Errorf("failed to initialize firebase app: %v", err)
 	}
 
-	// Get Firebase Auth Client
+	// Dapatkan Firebase Auth Client
 	authClient, err := app.Auth(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("error initializing firebase auth: %v", err)
+		return nil, fmt.Errorf("failed to initialize firebase auth: %v", err)
 	}
 
+	firebaseAuth = authClient
 	return authClient, nil
 }
 
 func main() {
 
+	models.ConnectDatabase()
+
 	authClient, err := getFirebaseAuth()
 	if err != nil {
-		log.Fatalf("Failed to initialize Firebase Auth: %v", err)
+		fmt.Println("Failed to initialize Firebase Auth:", err)
+		os.Exit(1)
 	}
-	fmt.Println("Firebase Auth initialized successfully:", authClient)
-
-	models.ConnectDatabase()
+	controllers.SetFirebaseAuth(authClient) // Kirim ke controller
 
 	port := os.Getenv("PORT")
 	if port == "" {
