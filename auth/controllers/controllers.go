@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"auth/models"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -60,55 +60,48 @@ func Register(c *fiber.Ctx) error {
 func Login(c *fiber.Ctx) error {
 	var data map[string]string
 
-	// Parse input data
+	// Ambil data dari request body
 	if err := c.BodyParser(&data); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	// Fetch user with Preload for TypeInfo (TypeUser)
+	// Ambil Firebase Token dari request
+	idToken := data["id_token"]
+	email := data["email"]
+
+	// Jika tidak ada token atau email, tolak permintaan
+	if idToken == "" || email == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Email required"})
+	}
+
+	// Cari user berdasarkan email di database
 	var user models.User
-	err := models.DB.Debug().
-		Preload("TypeInfo"). // Preload TypeInfo to include the related TypeUser
-		Where("email = ?", data["email"]).
-		First(&user).Error
+	err := models.DB.Where("email = ?", email).First(&user).Error
 
-	// If there's an error, return unauthorized
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid email or password"})
+	// Jika user tidak ditemukan, tolak akses
+	if err == gorm.ErrRecordNotFound {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
+	} else if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
 	}
 
-	// Print user details to verify if the data is correct
-	fmt.Printf("User: %+v\n", user)
-
-	// Compare password
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data["password"])) != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid email or password"})
-	}
-
-	// Generate JWT token
+	// Generate JWT untuk backend (bukan Firebase Token, tapi JWT internal backend)
 	secretKey := os.Getenv("SECRET_KEY")
-	if secretKey == "" {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Secret key not configured"})
-	}
-
 	claims := jwt.MapClaims{
 		"email": user.Email,
-		"type":  user.Type, // The type ID from user
+		"type":  user.Type,
 		"exp":   time.Now().Add(time.Hour * 240).Unix(),
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not generate token"})
-	}
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, _ := jwtToken.SignedString([]byte(secretKey))
 
-	// Return user info along with the token
+	// Return user info + JWT backend
 	return c.JSON(fiber.Map{
-		"token":     t,
+		"token":     signedToken,
 		"email":     user.Email,
 		"phone":     user.Phone,
 		"full_name": user.FullName,
-		"type":      user.Type, // This will now correctly show the type from the related TypeUser table
+		"type":      user.Type,
 	})
 }
 
