@@ -1,8 +1,6 @@
 module auth
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.24.0
 
 require (
 	firebase.google.com/go v3.13.0+incompatible
