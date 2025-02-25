@@ -30,13 +30,13 @@ func getFirebaseAuth() (*auth.Client, error) {
 	credentials := os.Getenv("FIREBASE_CREDENTIALS")
 
 	if credentials == "" {
-		return nil, fmt.Errorf("FIREBASE_CREDENTIALS is not set")
+		return nil, fmt.Errorf("firebase_credentials is not set")
 	}
 
 	// Convert JSON string to map
 	var credMap map[string]interface{}
 	if err := json.Unmarshal([]byte(credentials), &credMap); err != nil {
-		return nil, fmt.Errorf("Invalid FIREBASE_CREDENTIALS JSON format")
+		return nil, fmt.Errorf("invalid firebase_credentials JSON format")
 	}
 
 	// Convert map to Firebase option
@@ -45,13 +45,13 @@ func getFirebaseAuth() (*auth.Client, error) {
 	// Initialize Firebase App
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		return nil, fmt.Errorf("Error initializing Firebase App: %v", err)
+		return nil, fmt.Errorf("error initializing firebase app: %v", err)
 	}
 
 	// Get Firebase Auth Client
 	authClient, err := app.Auth(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("Error initializing Firebase Auth: %v", err)
+		return nil, fmt.Errorf("error initializing firebase auth: %v", err)
 	}
 
 	return authClient, nil
