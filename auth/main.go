@@ -2,13 +2,13 @@ package main
 
 import (
 	"auth/models"
+	"auth/controllers"
 	"auth/routes"
 	"context"
+	"encoding/base64"
 	"fmt"
+	"log"
 	"os"
-	"strings"
-
-	"auth/controllers"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
@@ -19,20 +19,26 @@ import (
 
 var firebaseAuth *auth.Client
 
+// getFirebaseAuth menginisialisasi dan mengembalikan Firebase Auth Client
 func getFirebaseAuth() (*auth.Client, error) {
 	if firebaseAuth != nil {
 		return firebaseAuth, nil
 	}
 
-	credentials := os.Getenv("FIREBASE_CREDENTIALS")
-	if credentials == "" {
+	// Baca string Base64 kredensial dari variabel environment
+	encodedCredentials := os.Getenv("FIREBASE_CREDENTIALS_BASE64")
+	if encodedCredentials == "" {
 		return nil, fmt.Errorf("firebase credentials not set")
 	}
 
-	// Ubah karakter `\n` yang masih dalam bentuk string ke newline asli
-	credentials = strings.ReplaceAll(credentials, "\\n", "\n")
+	// Dekode Base64 untuk mendapatkan JSON asli kredensial
+	decoded, err := base64.StdEncoding.DecodeString(encodedCredentials)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode firebase credentials: %v", err)
+	}
 
-	opt := option.WithCredentialsJSON([]byte(credentials))
+	// Buat opsi untuk Firebase Admin SDK
+	opt := option.WithCredentialsJSON(decoded)
 
 	// Inisialisasi Firebase App
 	app, err := firebase.NewApp(context.Background(), nil, opt)
@@ -50,17 +56,18 @@ func getFirebaseAuth() (*auth.Client, error) {
 	return authClient, nil
 }
 
-
 func main() {
 
 	models.ConnectDatabase()
 
 	authClient, err := getFirebaseAuth()
 	if err != nil {
-		fmt.Println("Failed to initialize Firebase Auth:", err)
-		os.Exit(1)
+		log.Fatalf("Failed to initialize Firebase Auth: %v", err)
 	}
-	controllers.SetFirebaseAuth(authClient) // Kirim ke controller
+	log.Println("Firebase Auth initialized successfully:", authClient)
+
+	// Kirim Firebase Auth Client ke controllers
+	controllers.SetFirebaseAuth(authClient)
 
 	port := os.Getenv("PORT")
 	if port == "" {

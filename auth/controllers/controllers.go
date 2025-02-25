@@ -15,47 +15,48 @@ import (
 
 var firebaseAuth *auth.Client
 
+// SetFirebaseAuth menerima Firebase Auth Client dari main.go
 func SetFirebaseAuth(authClient *auth.Client) {
 	firebaseAuth = authClient
 }
 
+// Login mengautentikasi user menggunakan Firebase token
 func Login(c *fiber.Ctx) error {
 	var data map[string]string
 
-	// Ambil data dari request body
+	// Parse request body
 	if err := c.BodyParser(&data); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
 
 	idToken := data["id_token"]
 	email := data["email"]
 
 	if idToken == "" || email == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Email and token are required"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "id token and email are required"})
 	}
 
 	// Verifikasi token Firebase
 	token, err := firebaseAuth.VerifyIDToken(context.Background(), idToken)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid Firebase token"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid firebase token"})
 	}
 
-	// Cocokkan email dari token dengan request
+	// Pastikan email dari token cocok dengan yang dikirim
 	if token.Claims["email"] != email {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token does not match email"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "token does not match email"})
 	}
 
-	// Cari user di database berdasarkan email
+	// Cari user di database
 	var user models.User
 	err = models.DB.Where("email = ?", email).First(&user).Error
-
 	if err == gorm.ErrRecordNotFound {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "user not found"})
 	} else if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "database error"})
 	}
 
-	// Generate JWT internal backend
+	// Generate JWT internal untuk backend
 	secretKey := os.Getenv("SECRET_KEY")
 	claims := jwt.MapClaims{
 		"email": user.Email,
@@ -63,9 +64,12 @@ func Login(c *fiber.Ctx) error {
 		"exp":   time.Now().Add(time.Hour * 240).Unix(),
 	}
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, _ := jwtToken.SignedString([]byte(secretKey))
+	signedToken, err := jwtToken.SignedString([]byte(secretKey))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate token"})
+	}
 
-	// Return JWT backend ke user
+	// Return user info + JWT backend
 	return c.JSON(fiber.Map{
 		"token":     signedToken,
 		"email":     user.Email,
