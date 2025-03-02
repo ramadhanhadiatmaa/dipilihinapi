@@ -24,17 +24,17 @@ func CreateStatus(c *fiber.Ctx) error {
 	}
 
 	if exampleValue, exists := data["status"]; exists {
-		typeUser := models.TypeUser{
-			Type: fmt.Sprintf("%v", exampleValue), // Menyimpan value yang diterima dalam Type
+		datas := models.Status{
+			Status: fmt.Sprintf("%v", exampleValue), // Menyimpan value yang diterima dalam Type
 		}
 
 		// Simpan ke database
-		if err := models.DB.Create(&typeUser).Error; err != nil {
+		if err := models.DB.Create(&datas).Error; err != nil {
 			return jsonResponse(c, fiber.StatusInternalServerError, "Failed to save data", err.Error())
 		}
 
 		// Return response sukses
-		return jsonResponse(c, fiber.StatusCreated, "Data successfully added", typeUser)
+		return jsonResponse(c, fiber.StatusCreated, "Data successfully added", datas)
 	}
 
 	// Jika key "example" tidak ada
@@ -104,7 +104,7 @@ func UpdateStatus(c *fiber.Ctx) error {
 func DeleteStatus(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	if models.DB.Delete(&models.TypeUser{}, id).RowsAffected == 0 {
+	if models.DB.Delete(&models.Status{}, id).RowsAffected == 0 {
 		return jsonResponse(c, fiber.StatusNotFound, "Data not found or already deleted", nil)
 	}
 
