@@ -28,7 +28,7 @@ func ConnectDatabase() {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
-	if err := db.AutoMigrate(&TypeUser{}, &Status{}); err != nil {
+	if err := db.AutoMigrate(&Chat{}); err != nil {
 		log.Fatalf("Failed to migrate the database: %v", err)
 	}
 
