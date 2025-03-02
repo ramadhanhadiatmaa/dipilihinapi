@@ -3,6 +3,7 @@ package controllers
 import (
 	"chat/models"
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -14,7 +15,7 @@ func Create(c *fiber.Ctx) error {
 		return jsonResponse(c, fiber.StatusBadRequest, "Invalid input", err.Error())
 	}
 
-	allowedKeys := []string{"email, message"}
+	allowedKeys := []string{"email", "message"}
 
 	for key := range data {
 		if !contains(allowedKeys, key) {
@@ -26,6 +27,9 @@ func Create(c *fiber.Ctx) error {
 		datas := models.Chat{
 			Message: fmt.Sprintf("%v", exampleValue), // Menyimpan value yang diterima dalam Type
 		}
+
+		datas.CreatedAt = time.Now()
+		datas.Status = 1
 
 		// Simpan ke database
 		if err := models.DB.Create(&datas).Error; err != nil {
