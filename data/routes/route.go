@@ -12,12 +12,12 @@ func Route(app *fiber.App) {
 	type_user := api.Group("/typeuser")
 	type_user.Post("/", controllers.CreateType)
 	type_user.Delete("/:id", controllers.DeleteType)
-	
+
 	status := api.Group("/status")
 	status.Post("/", controllers.CreateStatus)
 	status.Get("/", controllers.ShowStatus)
 	status.Get("/:id", controllers.IndexStatus)
-	status.Put("/id", controllers.UpdateStatus)
+	status.Put("/:id", controllers.UpdateStatus)
 	status.Delete("/:id", controllers.DeleteStatus)
 
 	category := api.Group("/category")
