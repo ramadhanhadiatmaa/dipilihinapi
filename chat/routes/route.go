@@ -8,11 +8,11 @@ import (
 )
 
 func Route(app *fiber.App) {
-	api := app.Group("/v1")
+	api := app.Group("/v1", middlewares.Auth)
 
 	chat := api.Group("/chat")
-	chat.Post("/", controllers.Create, middlewares.Auth)
-	chat.Get("/", controllers.Show, middlewares.Auth)
-	chat.Get("/:id", controllers.Index, middlewares.Auth)
-	chat.Delete("/:id", controllers.Delete, middlewares.Auth)
+	chat.Post("/", controllers.Create)
+	chat.Get("/", controllers.Show)
+	chat.Get("/:id", controllers.Index)
+	chat.Delete("/:id", controllers.Delete)
 }
