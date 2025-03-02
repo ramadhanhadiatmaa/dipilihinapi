@@ -16,31 +16,34 @@ func Create(c *fiber.Ctx) error {
 	}
 
 	allowedKeys := []string{"email", "message"}
-
 	for key := range data {
 		if !contains(allowedKeys, key) {
 			return jsonResponse(c, fiber.StatusBadRequest, "Inputting data is not allowed", nil)
 		}
 	}
 
-	if exampleValue, exists := data["email"]; exists {
-		datas := models.Chat{
-			Message: fmt.Sprintf("%v", exampleValue),
-		}
-
-		datas.CreatedAt = time.Now()
-		datas.Status = 1
-
-		// Simpan ke database
-		if err := models.DB.Create(&datas).Error; err != nil {
-			return jsonResponse(c, fiber.StatusInternalServerError, "Failed to save data", err.Error())
-		}
-
-		// Return response sukses
-		return jsonResponse(c, fiber.StatusCreated, "Data successfully added", datas)
+	// Pastikan kedua key "email" dan "message" ada dalam data input
+	email, emailExists := data["email"]
+	message, messageExists := data["message"]
+	if !emailExists || !messageExists {
+		return jsonResponse(c, fiber.StatusBadRequest, "'email' and 'message' keys are required", nil)
 	}
-	// Jika key "example" tidak ada
-	return jsonResponse(c, fiber.StatusBadRequest, "'example' key is required", nil)
+
+	// Buat object Chat dengan menyimpan email dan message pada field yang sesuai
+	datas := models.Chat{
+		Email:     fmt.Sprintf("%v", email),
+		Message:   fmt.Sprintf("%v", message),
+		CreatedAt: time.Now(),
+		Status:    1,
+	}
+
+	// Simpan ke database
+	if err := models.DB.Create(&datas).Error; err != nil {
+		return jsonResponse(c, fiber.StatusInternalServerError, "Failed to save data", err.Error())
+	}
+
+	// Return response sukses
+	return jsonResponse(c, fiber.StatusCreated, "Data successfully added", datas)
 }
 
 func Show(c *fiber.Ctx) error {
