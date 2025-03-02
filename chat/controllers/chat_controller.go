@@ -25,7 +25,7 @@ func Create(c *fiber.Ctx) error {
 
 	if exampleValue, exists := data["email"]; exists {
 		datas := models.Chat{
-			Message: fmt.Sprintf("%v", exampleValue), // Menyimpan value yang diterima dalam Type
+			Message: fmt.Sprintf("%v", exampleValue),
 		}
 
 		datas.CreatedAt = time.Now()
