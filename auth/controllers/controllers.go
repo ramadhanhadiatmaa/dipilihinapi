@@ -76,6 +76,7 @@ func Login(c *fiber.Ctx) error {
 		"phone":     user.Phone,
 		"full_name": user.FullName,
 		"type":      user.Type,
+		"id":        user.ID,
 	})
 }
 
