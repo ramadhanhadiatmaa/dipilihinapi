@@ -12,15 +12,6 @@ type User struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
-type TypeUser struct {
-	ID   int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Type string `gorm:"type:varchar(30);not null" json:"type"`
-}
-
 func (User) TableName() string {
 	return "user"
-}
-
-func (TypeUser) TableName() string {
-	return "type_user"
 }

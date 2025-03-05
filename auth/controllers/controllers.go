@@ -106,11 +106,6 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not register user"})
 	}
 
-	// Mengambil informasi tipe user (TypeInfo) yang sudah terpreload
-	var newUser models.User
-	if err := models.DB.Preload("TypeInfo").First(&newUser, user.ID).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not retrieve user type information"})
-	}
 	return c.JSON(fiber.Map{
 		"message": "User registered successfully",
 	})
