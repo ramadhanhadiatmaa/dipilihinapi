@@ -112,6 +112,20 @@ func Register(c *fiber.Ctx) error {
 	})
 }
 
+func Index(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var data models.User
+
+	if err := models.DB.First(&data, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return jsonResponse(c, fiber.StatusNotFound, "No data found", nil)
+		}
+		return jsonResponse(c, fiber.StatusInternalServerError, "Failed to load data", err.Error())
+	}
+
+	return c.JSON("Data found")
+}
+
 func Update(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
