@@ -76,6 +76,7 @@ func Login(c *fiber.Ctx) error {
 		"phone":     user.Phone,
 		"full_name": user.FullName,
 		"type":      user.Type,
+		"id":        user.ID,
 	})
 }
 
@@ -106,14 +107,23 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not register user"})
 	}
 
-	// Mengambil informasi tipe user (TypeInfo) yang sudah terpreload
-	var newUser models.User
-	if err := models.DB.Preload("TypeInfo").First(&newUser, user.ID).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not retrieve user type information"})
-	}
 	return c.JSON(fiber.Map{
 		"message": "User registered successfully",
 	})
+}
+
+func Index(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var data models.User
+
+	if err := models.DB.First(&data, "id = ?", id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return jsonResponse(c, fiber.StatusNotFound, "No data found", nil)
+		}
+		return jsonResponse(c, fiber.StatusInternalServerError, "Failed to load data", err.Error())
+	}
+
+	return c.JSON("Data found")
 }
 
 func Update(c *fiber.Ctx) error {
