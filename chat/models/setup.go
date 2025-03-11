@@ -3,6 +3,7 @@ package models
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -27,6 +28,16 @@ func ConnectDatabase() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database instance: %v", err)
+	}
+
+	sqlDB.SetMaxOpenConns(20)              
+	sqlDB.SetMaxIdleConns(10)              
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute) 
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 
 	if err := db.AutoMigrate(&Chat{}); err != nil {
 		log.Fatalf("Failed to migrate the database: %v", err)
