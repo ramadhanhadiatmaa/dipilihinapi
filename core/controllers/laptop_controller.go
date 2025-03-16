@@ -39,5 +39,19 @@ func GetLaptops(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(laptops)
+	// Membuat map untuk memetakan ID ke data laptop
+	laptopMap := make(map[int]models.Laptop)
+	for _, laptop := range laptops {
+		laptopMap[laptop.ID] = laptop
+	}
+
+	// Menyusun ulang hasil berdasarkan urutan id yang di-request
+	orderedLaptops := make([]models.Laptop, 0, len(ids))
+	for _, id := range ids {
+		if laptop, exists := laptopMap[id]; exists {
+			orderedLaptops = append(orderedLaptops, laptop)
+		}
+	}
+
+	return c.JSON(orderedLaptops)
 }
