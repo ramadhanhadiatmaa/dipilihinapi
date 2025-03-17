@@ -3,7 +3,7 @@ name: CI/CD for Multiple Services - Dev
 on:
   push:
     branches:
-      - dev
+      - auth
 
 jobs:
   build-and-push:
@@ -13,8 +13,6 @@ jobs:
       matrix:
         service:
           - auth
-          - chat
-          - data
 
     steps:
       - name: Checkout
@@ -51,7 +49,5 @@ jobs:
             sudo docker-compose -f /var/www/dpdev/docker-compose.yml down || true
             
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/auth-dp:v1.0
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/chat-dp:v1.0
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/data-dp:v1.0
 
             sudo docker-compose -f /var/www/dpdev/docker-compose.yml up -d
