@@ -135,7 +135,7 @@ func Update(c *fiber.Ctx) error {
 	var data models.User
 	if err := models.DB.First(&data, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return jsonResponse(c, fiber.StatusNotFound, "Data not found", nil)
+			return jsonResponse(c, fiber.StatusNotFound, "No data found", nil)
 		}
 		return jsonResponse(c, fiber.StatusInternalServerError, "Failed to load data", err.Error())
 	}

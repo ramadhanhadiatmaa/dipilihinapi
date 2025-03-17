@@ -3,7 +3,7 @@ name: CI/CD for Multiple Services - Dev
 on:
   push:
     branches:
-      - auth
+      - dev
 
 jobs:
   build-and-push:
