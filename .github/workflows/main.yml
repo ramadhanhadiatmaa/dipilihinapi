@@ -3,7 +3,7 @@ name: CI/CD for Multiple Services - Dev
 on:
   push:
     branches:
-      - dev
+      - auth
 
 jobs:
   build-and-push:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         service:
-          - core
+          - auth
 
     steps:
       - name: Checkout
@@ -48,6 +48,6 @@ jobs:
           script: |
             sudo docker-compose -f /var/www/dpdev/docker-compose.yml down || true
             
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/core-dp:v1.0
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/auth-dp:v1.0
 
             sudo docker-compose -f /var/www/dpdev/docker-compose.yml up -d
