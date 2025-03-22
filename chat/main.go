@@ -14,7 +14,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "7303"
+		port = "6903"
 	}
 
 	app := fiber.New()

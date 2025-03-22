@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /app/core-dp .
 
-EXPOSE 7304
+EXPOSE 6904
 
 CMD [ "./core-dp" ]

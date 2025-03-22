@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /app/data-dp .
 
-EXPOSE 7302
+EXPOSE 6902
 
 CMD [ "./data-dp" ]
