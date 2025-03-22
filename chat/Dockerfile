@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /app/chat-dp .
 
-EXPOSE 7303
+EXPOSE 6903
 
 CMD [ "./chat-dp" ]

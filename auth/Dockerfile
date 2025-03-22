@@ -15,6 +15,6 @@ WORKDIR /app
 
 COPY --from=build /app/auth-dp .
 
-EXPOSE 7301
+EXPOSE 6901
 
 CMD [ "./auth-dp" ]

@@ -45,5 +45,5 @@ func main() {
 
 	routes.SetupRoutes(app)
 
-	log.Fatal(app.Listen(":7304"))
+	log.Fatal(app.Listen(":6904"))
 }
