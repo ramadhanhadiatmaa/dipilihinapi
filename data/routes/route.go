@@ -10,6 +10,9 @@ import (
 func Route(app *fiber.App) {
 	api := app.Group("/v1")
 
+	image := api.Group("/image")
+	image.Post("/upload", controllers.UploadImage)
+
 	type_user := api.Group("/typeuser")
 	type_user.Post("/", controllers.CreateType, middlewares.Auth)
 	type_user.Delete("/:id", controllers.DeleteType, middlewares.Auth)
